@@ -1,6 +1,6 @@
 %define name ipod
 %define version 2.0
-%define release 3
+%define release 3.planetlab%{?date:.%{date}}
 
 Summary: PlanetLab ICMP Ping of Death
 Name: %{name}
