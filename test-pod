@@ -1,0 +1,80 @@
+#! /bin/sh
+# Script to test the "ping-of-death" ("POD") functionality.
+# This script is run on a machine that has the POD feature patched
+# into the kernel and has the tools installed in the machine. 
+#
+# The process is:
+#   * build the kernel with the pod patch
+#   * install the kernel on a machine
+#   * reboot to run that kernel
+#   * on the machine with that kernel, run this script
+#   * if you answer "y" to the question, you will reboot that machine
+#
+# This script was built from the pl-pod* script files.  It has no
+# dependency on them other than it expects /usr/local/planetlab/bin/pl-poddoit
+# to exist to send the POD packet.
+# -----------------------------------------------------------------
+# $Header: /shareddata/CVS/planetlab/admin/ipod/test-pod,v 1.2 2003/01/18 01:52:10 radams Exp $
+#
+# Copyright (c) 2003 Intel Corporation
+# All rights reserved.
+# This file is distributed under the terms in the attached INTEL_LICENSE
+# file.  If you do not find this file, a copy can be obtained by
+# writing to Intel Research Berkeley; Attention: Intel License Inquiry;
+# 2150 Shattuck Avenue, suite 1300; Berkeley, CA 94704
+# -----------------------------------------------------------------
+
+PLBIN="/usr/local/planetlab/bin"
+PLDOIT="$PLBIN/pl-poddoit"
+
+SYSCTL="/sbin/sysctl"
+
+if ! [[ -x $PLDOIT ]] ; then
+    echo "CONFIG ERROR: the send POD executable not available at $PLDOIT"
+    exit 1
+fi
+
+IPODHOSTP=`hostname -i`
+IPODMASKP="255.255.255.255"
+IPODHASHP=`printf "%04x%04x%04x%04x%04x%04x%04x%04x\n" $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM`
+
+echo "IPODHOST = $IPODHOSTP"
+echo "IPODMASK = $IPODMASKP"
+echo "IPODKEY = $IPODHASHP"
+
+echo "=== Set the set parameters into the kernel ==="
+IPODHOST=`echo $IPODHOSTP | \
+    sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1 \2 \3 \4/' | \
+    awk '{ printf "%d\n", $1*16777216+$2*65536+$3*256+$4 }'`
+IPODMASK=`echo $IPODMASKP | \
+    sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1 \2 \3 \4/' | \
+    awk '{ printf "%d\n", $1*16777216+$2*65536+$3*256+$4 }'`
+IPODKEY=`echo $IPODHASHP | \
+    sed -e 's/\(.*\)/\1/'`
+$SYSCTL -w net.ipv4.icmp_ipod_host=$IPODHOST >/dev/null
+Success=$?
+$SYSCTL -w net.ipv4.icmp_ipod_mask=$IPODMASK >/dev/null
+$SYSCTL -w net.ipv4.icmp_ipod_key=$IPODKEY >/dev/null
+$SYSCTL -w net.ipv4.icmp_ipod_enabled=1 >/dev/null
+if [[ $Success -eq 0 ]] ; then
+    echo "SUCCESS setting parameters"
+else
+    echo "FAILURE to set POD parameters"
+    exit 1
+fi
+
+echo "=== Try to reset with wrong payload -- this should fail ==="
+echo echo "01234567890123456789012345678901" \| $PLDOIT -i - $IPODHOSTP
+echo "01234567890123456789012345678901" | $PLDOIT -i - $IPODHOSTP
+
+echo "=== Reset host ==="
+echo "THIS NEXT STEP WILL RESET THIS COMPUTER!!!!"
+read -p "Enter 'y' if you wish to reset this computer: " REPLY
+if [[ x"$REPLY" == "xy" ]] ; then
+    echo $IPODHASHP | $PLDOIT -i - $IPODHOSTP
+    echo echo $IPODHASHP \| $PLDOIT -i - $IPODHOSTP
+else
+    echo "Final reset test not performed."
+fi
+
+
