@@ -1,10 +1,15 @@
+%define name ipod
+%define version 2.0
+%define release 3
+
 Summary: PlanetLab ICMP Ping of Death
-Name: ipod
-Version: 2.0
-Release: 2
+Name: %{name}
+Version: %{version}
+Release: %{release}
 Copyright: GPL
 Group: System Environment/Kernel
-Source: ipod-2.0.tar.gz
+Source: %{name}-%{version}.tar.gz
+BuildRoot: /tmp/%{name}-%{version}-root
 
 %description
 Startup service to enable Ping Of Death
@@ -16,10 +21,18 @@ Startup service to enable Ping Of Death
 %build
 make
 
+
 %install
-make install
+mkdir -p $RPM_BUILD_ROOT/usr/local/planetlab/bin
+mkdir -p $RPM_BUILD_ROOT/etc/init.d
+
+cp pl-poddoit $RPM_BUILD_ROOT/usr/local/planetlab/bin/
+cp pod $RPM_BUILD_ROOT/etc/init.d/
+
 
 %clean
+rm -rf $RPM_BUILD_ROOT
+
 
 %files
 %defattr(-, root, root)
@@ -48,3 +61,8 @@ fi
 
 %postun
 
+
+%changelog
+* Mon Apr 12 2004 Aaron Klingaman <alk@cs.princeton.edu>
+- moved to new build process
+- added change log
