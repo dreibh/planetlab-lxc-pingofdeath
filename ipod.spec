@@ -1,6 +1,6 @@
 %define name ipod
 %define version 2.0
-%define release 3.planetlab%{?date:.%{date}}
+%define release 4.planetlab%{?date:.%{date}}
 
 Summary: PlanetLab ICMP Ping of Death
 Name: %{name}
@@ -35,7 +35,7 @@ cp pod $RPM_BUILD_ROOT/etc/init.d/
 
 
 %files
-%defattr(-, root, root)
+%defattr(0755, root, root)
 /etc/init.d/pod
 /usr/local/planetlab/bin/pl-poddoit
 
