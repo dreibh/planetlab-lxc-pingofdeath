@@ -9,7 +9,7 @@ Release: %{release}
 Copyright: GPL
 Group: System Environment/Kernel
 Source: %{name}-%{version}.tar.gz
-BuildRoot: /tmp/%{name}-%{version}-root
+BuildRoot: %{_tmppath}/%{name}-%{version}root
 
 %description
 Startup service to enable Ping Of Death
@@ -31,7 +31,7 @@ cp pod $RPM_BUILD_ROOT/etc/init.d/
 
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 
 %files
