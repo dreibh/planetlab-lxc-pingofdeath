@@ -2,6 +2,11 @@
 %define version 2.0
 %define release 4.planetlab%{?date:.%{date}}
 
+Vendor: PlanetLab
+Packager: PlanetLab Central <support@planet-lab.org>
+Distribution: PlanetLab 3.0
+URL: http://cvs.planet-lab.org/cvs/ipod
+
 Summary: PlanetLab ICMP Ping of Death
 Name: %{name}
 Version: %{version}
