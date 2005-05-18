@@ -1,6 +1,6 @@
 %define name ipod
 %define version 2.0
-%define release 5.planetlab%{?date:.%{date}}
+%define release 6.planetlab%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
