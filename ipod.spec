@@ -53,7 +53,7 @@ if [ "$1" = 1 ]; then
 	chkconfig --add pod
 	chkconfig pod on
 
-	if [[ "$RUNLEVEL" != "unknown" ]]; then
+	if [[ "$PL_BOOTCD" != "1" ]] ; then
 		/etc/init.d/pod start
 	fi
 fi
