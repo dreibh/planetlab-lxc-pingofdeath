@@ -1,6 +1,6 @@
 %define name ipod
-%define version 2.0
-%define release 6.planetlab%{?date:.%{date}}
+%define version 2.1
+%define release 1.planetlab%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
@@ -47,8 +47,6 @@ cp pod $RPM_BUILD_ROOT/etc/init.d/
 %pre
 
 %post 
-RUNLEVEL=`/sbin/runlevel`
-
 if [ "$1" = 1 ]; then
 	chkconfig --add pod
 	chkconfig pod on
@@ -68,6 +66,11 @@ fi
 
 
 %changelog
+* Fri Aug  5 2005 Aaron Klingaman <alk@absarokasoft.com>
+- updated to use new source of POD Hash (/etc/planetlab/session)
+- minor build changes to simply build process
+- remove unnecessary call to runlevel in post section
+
 * Mon Apr 12 2004 Aaron Klingaman <alk@cs.princeton.edu>
 - moved to new build process
 - added change log

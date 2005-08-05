@@ -1,0 +1,216 @@
+#! /bin/bash
+#include INTEL_LICENSE.txt
+#
+########################################################################
+#
+# PlanetLab Ping Of Death
+#
+########################################################################
+#
+# DESCRIPTION
+#
+# This shell script takes care of starting and stopping Planetlab
+# Ping-Of-Death.
+#
+# The Planetlab POD is a Linux kernel patch that creates the feature
+# of resetting and rebooting a computer when a particularily
+# formatted ICMP "ping" commmand is received.
+#
+# A PlanetLab node's kernel gets a host, mask and hash value through
+# sysctl's that are performed on the node.  The node then looks
+# for an ICMP packet from a host matching the host/mask and, if the
+# packet payload is the hash value, the node forces an immediate
+# reboot.
+#
+# HISTORY
+#
+# May 17, 2003    -   Paul Brett <paul.brett@intel.com>
+#                     Initial version based on the work of 
+#                     Robert Adams <robert.adams@intel.com> and EMULAB
+#
+# chkconfig: - 11 99
+# description: enable Ping of Death
+
+# Source function library.
+. /etc/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+function enable_pod()
+{
+    local SYSCTL=/sbin/sysctl
+
+    local IP_SUBNET=$1
+    local IP_MASK=$2
+    local HASH=$3
+
+    # Grotesque sed/awk converts IP addrs into an integer for sysctl
+    local IPODHOST=`echo $IP_SUBNET | \
+              sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1 \2 \3 \4/' | \
+              awk '{ printf "%d\n", $1*16777216+$2*65536+$3*256+$4 }'`
+    local IPODMASK=`echo $IP_MASK | \
+              sed -e 's/\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*/\1 \2 \3 \4/' | \
+              awk '{ printf "%d\n", $1*16777216+$2*65536+$3*256+$4 }'`
+
+    # figure out the version
+    local version=`$SYSCTL net.ipv4.icmp_ipod_version 2>/dev/null`
+    if [[ "$version" == "" ]]
+    then
+        $SYSCTL net.ipv4.icmp_ipod_enabled >/dev/null 2>&1
+        case $? in
+            0)
+                version=1
+                ;;
+            *)
+                version=0
+                ;;
+        esac
+    fi
+
+    # enable if possible
+    case $version in
+        0)
+            return 1
+            ;;
+        1)
+            $SYSCTL -w net.ipv4.icmp_ipod_host=$IPODHOST >/dev/null
+            $SYSCTL -w net.ipv4.icmp_ipod_enabled=1 >/dev/null
+            Success=0
+            ;;
+        *)
+            $SYSCTL -w net.ipv4.icmp_ipod_host=$IPODHOST >/dev/null
+            Success=$?
+            $SYSCTL -w net.ipv4.icmp_ipod_mask=$IPODMASK >/dev/null
+            $SYSCTL -w net.ipv4.icmp_ipod_key=$HASH >/dev/null
+            $SYSCTL -w net.ipv4.icmp_ipod_enabled=1 >/dev/null
+        ;;
+    esac
+    return $Success
+}
+
+function disable_pod()
+{
+    local SYSCTL=/sbin/sysctl
+    $SYSCTL -w net.ipv4.icmp_ipod_enabled=0 >/dev/null
+    return 0
+}
+
+function status_pod()
+{
+
+    local SYSCTL="/sbin/sysctl"
+
+    # Check that IPOD is built into this kernel
+    local version
+    version=`$SYSCTL -n net.ipv4.icmp_ipod_version 2> /dev/null`
+    if [[ $? -ne 0 ]]
+    then
+        echo "Not installed"
+        return 255
+    fi
+
+    # Check if it has been enabled
+    local enabled=`$SYSCTL -n net.ipv4.icmp_ipod_enabled`
+    echo -n "version $version "
+    if [[ $enabled -eq 1 ]]
+    then 
+        echo "Enabled"
+    else 
+        echo "Disabled"
+    fi
+    return $enabled
+}
+
+echo -n "PlanetLab Ping Of Death "
+
+CONF=/etc/ipod.conf
+
+if [[ -r $CONF ]]
+then
+    # load the POD configuration file
+    . $CONF
+else
+    # no POD configuration file - failed
+    echo
+    action $"Missing configuration file $CONF" /bin/false
+    exit 1
+fi
+
+SESSION=/etc/planetlab/session
+
+if [[ -r $SESSION ]]
+then
+    # load the session value file
+    HASH=`cat $SESSION`
+else
+    # no session value (ie, no hash)
+    echo
+    action $"Missing node session file $SESSION" /bin/false
+    exit 1
+fi
+
+# Check that networking is up.
+if [[ ${NETWORKING} = "no" ]]
+then
+    action $"" /bin/false
+    exit 1
+fi
+
+# Check the POD parameters
+if [[ "$HASH" == "" ]]
+then
+    echo 
+    action $"Missing HASH (from $SESSION)" /bin/false
+    exit 1
+fi
+
+if [[ "$IP_SUBNET" == "" ]]
+then
+    echo
+    action $"Missing IP_SUBNET in $CONF" /bin/false
+    exit 1
+fi
+
+if [[ "$IP_MASK" == "" ]]
+then
+    echo
+    action $"Missing IP_MASK in $CONF" /bin/false
+    exit 1
+fi
+
+# See how we were called.
+case "$1" in
+  start)
+        enable_pod $IP_SUBNET $IP_MASK $HASH
+        RETVAL=$?
+        if [[ $RETVAL -eq 0 ]]
+        then
+            action $"" /bin/true
+        else
+            action $"" /bin/false
+        fi
+        ;;
+  stop)
+        disable_pod
+        RETVAL=$?
+        if [[ $RETVAL -eq 0 ]]
+        then
+            action $"" /bin/true
+        else
+            action $"" /bin/false
+        fi
+        ;;
+  status)
+        status_pod
+        RETVAL=$?
+        ;;
+  restart|reload)
+        disable_pod
+        enable_pod
+        RETVAL=$?
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
