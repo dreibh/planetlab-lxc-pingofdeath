@@ -138,4 +138,5 @@ def main():
             pod = protos.get(protocol,noop_pod)
             pod(host,key)
 
-main()
+if __name__ == '__main__':
+    main()
