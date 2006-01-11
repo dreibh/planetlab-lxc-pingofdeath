@@ -20,36 +20,7 @@ This POD system uses the same packet definition as EMULAB and uses
 the some code from EMULAB to generate and transmit the packet.
 No reason to invent something new.
 
-The remote execution (ssh commands) are all done as "idsl1".
-
 Contolling host tools:
-pl-podset:  set the host and hash on a remote node
-        Call: pl-podset hostIP maskIP targetName
-        Uses ssh to call 'pl-podcntl' on the remote node to
-        set the host and hash in that node.  Also saves the
-        information into the file './HashFile'.
-pl-podzap: send ICMP packet to node to resetit
-        Call: pl-podzap targetName
-        Fetches parameters from the file './HashFile' and
-        calls 'pl-poddoit' on the 'hostIP' machine to send the 
-        reset ICMP packet to the specified target node.
-        Note that this relies on the planetlab node that
-        was specified in the 'pl-podset' command to actually
-        do the packet transmission.
-pl-poddoit: send the ICMP packet (called by 'pl-podzap')
-        Routine that constructs an ICMP packet of the proper
-        format and send it to the node.
-
-Planetlab node scripts:
-pl-podcntl: set the host and hash into the kernel
-        Call: pl-podcntl hostIP maskIP hashValue
-        Sets the specified values into the kernel and enables
-        the POD filtering operation.
-
-EXAMPLE
--------
-Setting a node to be able to reset (assuming running on 123.123.12.23):
-    pl-podset 123.123.12.23 255.255.255.255 planetlab-1.stanford.edu
-
-To later reset the node (command performed on 123.123.12.23):
-    pl-podzap planetlab-1.stanford.edu
+pod.py    Used to send both ICMP and UDP based POD packets. Requires
+          the hostname to send the packet do, and the configured
+          hash/key for the specified node.
