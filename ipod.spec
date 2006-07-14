@@ -11,7 +11,7 @@ Summary: PlanetLab ICMP/UDP Ping of Death
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Copyright: GPL
+License: GPL
 Group: System Environment/Kernel
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}root
