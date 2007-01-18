@@ -58,7 +58,7 @@ cp pod.py $RPM_BUILD_ROOT/usr/bin
 
 %files client
 %defattr(0755, root, root)
-/usr/bin/pod.py
+/usr/bin/pod.py*
 
 
 %pre
