@@ -1,11 +1,18 @@
+#
+# $Id$
+#
+%define url $URL$
+
 %define name ipod
 %define version 2.2
-%define release 1%{?pldistro:.%{pldistro}}%{?date:.%{date}}
+%define taglevel 1
+
+%define release %{taglevel}%{?pldistro:.%{pldistro}}%{?date:.%{date}}
 
 Vendor: PlanetLab
 Packager: PlanetLab Central <support@planet-lab.org>
-Distribution: PlanetLab 3.0
-URL: http://cvs.planet-lab.org/cvs/ipod
+Distribution: PlanetLab %{plrelease}
+URL: %(echo %{url} | cut -d ' ' -f 2)
 
 Summary: PlanetLab ICMP/UDP Ping of Death
 Name: %{name}
